@@ -65,6 +65,7 @@ export default function MatchPage({ setPage, onMatchComplete }) {
         scoreAdversario={match.scoreAdversario}
         acertosJogador={match.acertosJogador}
         totalPerguntas={match.totalPerguntas}
+        revisao={match.respostas}
         onRematch={handleRematch}
         setPage={setPage}
       />

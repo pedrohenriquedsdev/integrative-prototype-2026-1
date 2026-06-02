@@ -85,7 +85,19 @@ export function useMatch(perguntas, adversario) {
 
     setRespostas((prev) => [
       ...prev,
-      { perguntaId: pergunta.id, resposta: indiceAlternativa, acertou: jogadorAcertou },
+      {
+        perguntaId: pergunta.id,
+        pergunta: pergunta.pergunta,
+        categoria: pergunta.categoria,
+        dificuldade: pergunta.dificuldade,
+        alternativas: pergunta.alternativas,
+        resposta: indiceAlternativa,
+        respostaTexto: respostaValida ? pergunta.alternativas[indiceAlternativa] : 'Tempo esgotado',
+        correta: pergunta.correta,
+        corretaTexto: pergunta.alternativas[pergunta.correta],
+        acertou: jogadorAcertou,
+        explicacao: pergunta.explicacao,
+      },
     ]);
     setRespostasAdversario((prev) => [
       ...prev,

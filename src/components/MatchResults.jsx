@@ -7,6 +7,7 @@ export default function MatchResults({
   scoreAdversario,
   acertosJogador,
   totalPerguntas,
+  revisao = [],
   onRematch,
   setPage,
 }) {
@@ -57,6 +58,51 @@ export default function MatchResults({
       <section className="result-rule">
         <strong>Regra aplicada</strong>
         <span>Vitoria soma 3 pontos, empate soma 1 ponto e derrota soma 0 ponto.</span>
+      </section>
+
+      <section className="study-review">
+        <div className="study-review-header">
+          <div>
+            <p className="eyebrow">Laboratorio de estudo</p>
+            <h2>Revisao tecnica do X1</h2>
+            <p>Revise cada decisao tomada na partida e transforme o duelo em material de estudo.</p>
+          </div>
+          <div className="study-summary">
+            <span>{acertosJogador} acertos</span>
+            <strong>{totalPerguntas - acertosJogador} pontos para revisar</strong>
+          </div>
+        </div>
+
+        <div className="review-list">
+          {revisao.map((item, index) => (
+            <article className={`review-card ${item.acertou ? 'success' : 'danger'}`} key={`${item.perguntaId}-${index}`}>
+              <div className="review-card-top">
+                <span>Questao {index + 1} - {item.categoria}</span>
+                <strong>{item.acertou ? 'Acerto' : 'Erro'}</strong>
+              </div>
+
+              <h3>{item.pergunta}</h3>
+
+              <div className="review-answer-grid">
+                <div>
+                  <span>Escolhida</span>
+                  <strong>
+                    {item.resposta >= 0 ? `${String.fromCharCode(65 + item.resposta)} - ${item.respostaTexto}` : item.respostaTexto}
+                  </strong>
+                </div>
+                <div>
+                  <span>Correta</span>
+                  <strong>{String.fromCharCode(65 + item.correta)} - {item.corretaTexto}</strong>
+                </div>
+              </div>
+
+              <div className="review-explanation">
+                <span>Explicacao tecnica</span>
+                <p>{item.explicacao}</p>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <div className="result-actions">
