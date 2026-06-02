@@ -10,6 +10,7 @@ export default function QuestionCard({
   respostaClicada,
 }) {
   const [podeResponder, setPodeResponder] = useState(true);
+  const [transicaoRestante, setTransicaoRestante] = useState(0);
   const timer = useTimer(30, () => {
     if (!feedback) onResposta(-1);
   }, podeResponder);
@@ -17,16 +18,26 @@ export default function QuestionCard({
   useEffect(() => {
     timer.resetarTimer();
     setPodeResponder(true);
+    setTransicaoRestante(0);
   }, [perguntaAtual]);
 
   useEffect(() => {
-    if (feedback) setPodeResponder(false);
+    if (!feedback) return undefined;
+
+    setPodeResponder(false);
+    setTransicaoRestante(feedback.transitionSeconds || 5);
+
+    const interval = window.setInterval(() => {
+      setTransicaoRestante((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
   }, [feedback]);
 
   if (!pergunta) return null;
 
   return (
-    <section className="question-card">
+    <section className={`question-card ${feedback ? (feedback.acertou ? 'is-correct' : 'is-wrong') : ''}`}>
       <div className="question-header">
         <div>
           <p className="eyebrow">{pergunta.categoria} - {pergunta.dificuldade}</p>
@@ -67,6 +78,27 @@ export default function QuestionCard({
           </strong>
         )}
       </footer>
+
+      {feedback && (
+        <aside className={`feedback-panel ${feedback.acertou ? 'success' : 'danger'}`} aria-live="polite">
+          <div className="feedback-status">
+            <span>{feedback.acertou ? 'Acerto confirmado' : 'Falha detectada'}</span>
+            <strong>{feedback.acertou ? '+1 no placar tecnico' : 'Resposta correta revelada'}</strong>
+          </div>
+          <div className="feedback-copy">
+            <p>
+              <strong>Resposta correta:</strong> {String.fromCharCode(65 + feedback.alternativaCorreta)} - {feedback.alternativaCorretaTexto}
+            </p>
+            <p>{feedback.explicacao}</p>
+          </div>
+          <div className="transition-meter">
+            <span>Proxima pergunta em {transicaoRestante}s</span>
+            <div>
+              <i style={{ width: `${(transicaoRestante / (feedback.transitionSeconds || 5)) * 100}%` }} />
+            </div>
+          </div>
+        </aside>
+      )}
     </section>
   );
 }

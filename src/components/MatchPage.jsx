@@ -1,15 +1,28 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useMatch } from '../hooks/useMatch';
 import { getQuestionsForMatch } from '../data/mockQuestions';
 import { getAdversarioAleatorio, getCampeonatoAtivo, mockJogadorAtual } from '../data/mockMatches';
 import QuestionCard from './QuestionCard';
 import MatchResults from './MatchResults';
 
-export default function MatchPage({ setPage }) {
+export default function MatchPage({ setPage, onMatchComplete }) {
   const campeonato = useMemo(() => getCampeonatoAtivo(), []);
   const perguntas = useMemo(() => getQuestionsForMatch(10), []);
   const adversario = useMemo(() => getAdversarioAleatorio(), []);
   const match = useMatch(perguntas, adversario);
+  const resultSyncedRef = useRef(false);
+
+  useEffect(() => {
+    if (match.estadoPartida !== 'finalizada' || resultSyncedRef.current) return;
+
+    resultSyncedRef.current = true;
+    onMatchComplete?.(match.calcularResultado());
+  }, [match, onMatchComplete]);
+
+  function handleRematch() {
+    resultSyncedRef.current = false;
+    match.reiniciarPartida();
+  }
 
   if (match.estadoPartida === 'preparando') {
     return (
@@ -52,7 +65,7 @@ export default function MatchPage({ setPage }) {
         scoreAdversario={match.scoreAdversario}
         acertosJogador={match.acertosJogador}
         totalPerguntas={match.totalPerguntas}
-        onRematch={match.reiniciarPartida}
+        onRematch={handleRematch}
         setPage={setPage}
       />
     );
