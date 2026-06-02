@@ -11,6 +11,7 @@ export const mockQuestions = [
     correta: 0,
     dificuldade: 'medio',
     categoria: 'Dinamica',
+    explicacao: 'A segunda lei de Newton relaciona a forca resultante com massa e aceleracao. Por isso a expressao correta e F = m . a.',
   },
   {
     id: 2,
@@ -24,6 +25,7 @@ export const mockQuestions = [
     correta: 1,
     dificuldade: 'facil',
     categoria: 'Mecanica',
+    explicacao: 'Torque e o efeito rotacional gerado por uma forca aplicada a uma distancia do eixo. Quanto maior o braco perpendicular, maior o torque.',
   },
   {
     id: 3,
@@ -32,6 +34,7 @@ export const mockQuestions = [
     correta: 1,
     dificuldade: 'facil',
     categoria: 'Unidades',
+    explicacao: 'Torque e calculado por forca vezes distancia. No SI, a forca e medida em newtons e a distancia em metros, formando N.m.',
   },
   {
     id: 4,
@@ -45,6 +48,7 @@ export const mockQuestions = [
     correta: 0,
     dificuldade: 'medio',
     categoria: 'Materiais',
+    explicacao: 'O limite elastico e a tensao maxima em que o material ainda retorna ao formato inicial. Acima desse ponto, a deformacao passa a ser permanente.',
   },
   {
     id: 5,
@@ -58,6 +62,7 @@ export const mockQuestions = [
     correta: 0,
     dificuldade: 'medio',
     categoria: 'Termodinamica',
+    explicacao: 'Na conducao, o calor se propaga por interacoes moleculares dentro do material, sem transporte macroscopico de massa como ocorre na conveccao.',
   },
   {
     id: 6,
@@ -66,6 +71,7 @@ export const mockQuestions = [
     correta: 0,
     dificuldade: 'facil',
     categoria: 'Elementos de Maquinas',
+    explicacao: 'A mola armazena energia mecanica quando e deformada elasticamente e libera essa energia ao tentar voltar a sua forma original.',
   },
   {
     id: 7,
@@ -79,6 +85,7 @@ export const mockQuestions = [
     correta: 1,
     dificuldade: 'medio',
     categoria: 'Elementos de Maquinas',
+    explicacao: 'A relacao de transmissao de engrenagens depende da proporcao entre os numeros de dentes das rodas dentadas.',
   },
   {
     id: 8,
@@ -92,6 +99,7 @@ export const mockQuestions = [
     correta: 0,
     dificuldade: 'dificil',
     categoria: 'Processos',
+    explicacao: 'O recozimento aquece e resfria o material de forma controlada para aliviar tensoes internas e aumentar a ductilidade.',
   },
   {
     id: 9,
@@ -105,6 +113,7 @@ export const mockQuestions = [
     correta: 0,
     dificuldade: 'medio',
     categoria: 'Resistencia dos Materiais',
+    explicacao: 'Na regiao linear inicial, tensao e deformacao sao proporcionais. Esse comportamento e descrito pela Lei de Hooke.',
   },
   {
     id: 10,
@@ -113,6 +122,7 @@ export const mockQuestions = [
     correta: 1,
     dificuldade: 'facil',
     categoria: 'Metrologia',
+    explicacao: 'O torquimetro e o instrumento indicado para aplicar ou verificar torque em apertos controlados de parafusos e porcas.',
   },
 ];
 

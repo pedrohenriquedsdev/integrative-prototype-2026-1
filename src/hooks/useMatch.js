@@ -1,4 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+const TRANSITION_SECONDS = 5;
 
 export const RANKING_POINTS = {
   vitoria: 3,
@@ -16,6 +18,7 @@ export function useMatch(perguntas, adversario) {
   const [feedbackResposta, setFeedbackResposta] = useState(null);
   const [respostaClicada, setRespostaClicada] = useState(null);
   const lockedRef = useRef(false);
+  const timeoutRef = useRef(null);
 
   const totalPerguntas = perguntas.length;
   const pergunta = perguntas[perguntaAtual];
@@ -28,6 +31,7 @@ export function useMatch(perguntas, adversario) {
   }, []);
 
   const reiniciarPartida = useCallback(() => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
     lockedRef.current = false;
     setEstadoPartida('preparando');
     setPerguntaAtual(0);
@@ -74,6 +78,9 @@ export function useMatch(perguntas, adversario) {
       alternativaCorreta: pergunta.correta,
       resposta: indiceAlternativa,
       adversarioAcertou,
+      alternativaCorretaTexto: pergunta.alternativas[pergunta.correta],
+      explicacao: pergunta.explicacao,
+      transitionSeconds: TRANSITION_SECONDS,
     });
 
     setRespostas((prev) => [
@@ -88,8 +95,12 @@ export function useMatch(perguntas, adversario) {
     if (jogadorAcertou) setScoreJogador((prev) => prev + 1);
     if (adversarioAcertou) setScoreAdversario((prev) => prev + 1);
 
-    window.setTimeout(proximaPergunta, 1200);
+    timeoutRef.current = window.setTimeout(proximaPergunta, TRANSITION_SECONDS * 1000);
   }, [adversario, estadoPartida, pergunta, proximaPergunta]);
+
+  useEffect(() => () => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+  }, []);
 
   const calcularResultado = useCallback(() => {
     if (scoreJogador > scoreAdversario) {

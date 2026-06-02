@@ -5,10 +5,30 @@ import {
   calculateSubjectRanking,
   mockHistoricoPartidas,
   mockJogadorAtual,
-  mockRanking,
   subjectResults,
   weeklySubjects,
 } from './data/mockMatches';
+
+const rankingDemoSubject = 'termodinamica';
+
+const loginAccounts = [
+  {
+    role: 'student',
+    username: 'aluno',
+    password: '123',
+    name: mockJogadorAtual.nome,
+    label: 'Aluno',
+    startPage: 'inicio',
+  },
+  {
+    role: 'professor',
+    username: 'professor',
+    password: '123',
+    name: 'Prof. Carlos Eduardo',
+    label: 'Professor',
+    startPage: 'prof-dashboard',
+  },
+];
 
 const baseQuestions = [
   { id: 1, question: 'Explique o conceito de torque.', theme: 'Mecanica', difficulty: 'Medio', uses: 12 },
@@ -17,9 +37,11 @@ const baseQuestions = [
 ];
 
 export default function App() {
+  const [loggedUser, setLoggedUser] = useState(null);
   const [page, setPage] = useState('inicio');
-  const [role, setRole] = useState('student');
   const [rankingResults, setRankingResults] = useState(subjectResults);
+  const [lastRankingEvent, setLastRankingEvent] = useState(null);
+  const role = loggedUser?.role || 'student';
 
   const nav = role === 'student'
     ? [
@@ -37,9 +59,68 @@ export default function App() {
 
   const generalRanking = useMemo(() => calculateGeneralRanking(rankingResults), [rankingResults]);
 
-  function switchRole(nextRole) {
-    setRole(nextRole);
-    setPage(nextRole === 'student' ? 'inicio' : 'prof-dashboard');
+  function login(credentials) {
+    const account = loginAccounts.find((user) => (
+      user.role === credentials.role
+      && user.username === credentials.username.trim().toLowerCase()
+      && user.password === credentials.password
+    ));
+
+    if (!account) return false;
+
+    setLoggedUser(account);
+    setPage(account.startPage);
+    return true;
+  }
+
+  function logout() {
+    setLoggedUser(null);
+    setPage('inicio');
+  }
+
+  function applyRankingResult(result, source = 'Partida X1 concluida') {
+    const fieldByResult = {
+      vitoria: 'vitorias',
+      empate: 'empates',
+      derrota: 'derrotas',
+    };
+    const field = fieldByResult[result] || 'vitorias';
+
+    setRankingResults((students) => students.map((student) => {
+      if (student.nome !== mockJogadorAtual.nome) return student;
+
+      const previousRecord = student.subjects[rankingDemoSubject] || {
+        vitorias: 0,
+        empates: 0,
+        derrotas: 0,
+      };
+
+      return {
+        ...student,
+        subjects: {
+          ...student.subjects,
+          [rankingDemoSubject]: {
+            ...previousRecord,
+            [field]: previousRecord[field] + 1,
+          },
+        },
+      };
+    }));
+
+    setLastRankingEvent({
+      id: Date.now(),
+      student: mockJogadorAtual.nome,
+      result,
+      source,
+    });
+  }
+
+  function runRankingDemo() {
+    applyRankingResult('vitoria', 'Teste demonstrativo: vitoria simulada em Termodinamica');
+  }
+
+  if (!loggedUser) {
+    return <LoginPage onLogin={login} />;
   }
 
   return (
@@ -53,13 +134,10 @@ export default function App() {
           </span>
         </button>
 
-        <div className="role-switcher" aria-label="Alternar perfil">
-          <button className={role === 'student' ? 'active' : ''} onClick={() => switchRole('student')}>
-            Aluno
-          </button>
-          <button className={role === 'professor' ? 'active' : ''} onClick={() => switchRole('professor')}>
-            Professor
-          </button>
+        <div className="session-card" aria-label="Sessao ativa">
+          <span>{loggedUser.label}</span>
+          <strong>{loggedUser.name}</strong>
+          <small>{role === 'student' ? 'Area de aluno liberada' : 'Area de professor liberada'}</small>
         </div>
 
         <nav className="sidebar-nav">
@@ -75,15 +153,35 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <span>{role === 'student' ? mockJogadorAtual.nome : 'Prof. Carlos Eduardo'}</span>
+          <span>{loggedUser.name}</span>
           <strong>{role === 'student' ? `#${generalRanking.find((row) => row.nome === mockJogadorAtual.nome)?.rank || '-'} - ${generalRanking.find((row) => row.nome === mockJogadorAtual.nome)?.pontos || 0} pts` : 'Banco de temas'}</strong>
+          <button className="logout-button" onClick={logout}>Sair</button>
         </div>
       </aside>
 
       <main className="content">
-        {role === 'student' && page === 'inicio' && <HomePage setPage={setPage} generalRanking={generalRanking} />}
-        {role === 'student' && page === 'partida' && <MatchPage setPage={setPage} />}
-        {role === 'student' && page === 'ranking' && <RankingPage rankingResults={rankingResults} generalRanking={generalRanking} />}
+        {role === 'student' && page === 'inicio' && (
+          <HomePage
+            setPage={setPage}
+            generalRanking={generalRanking}
+            lastRankingEvent={lastRankingEvent}
+            onDemo={runRankingDemo}
+          />
+        )}
+        {role === 'student' && page === 'partida' && (
+          <MatchPage
+            setPage={setPage}
+            onMatchComplete={(result) => applyRankingResult(result.resultado)}
+          />
+        )}
+        {role === 'student' && page === 'ranking' && (
+          <RankingPage
+            rankingResults={rankingResults}
+            generalRanking={generalRanking}
+            lastRankingEvent={lastRankingEvent}
+            onDemo={runRankingDemo}
+          />
+        )}
         {role === 'student' && page === 'historico' && <HistoryPage />}
 
         {role === 'professor' && page === 'prof-dashboard' && <ProfessorDashboard setPage={setPage} />}
@@ -93,6 +191,8 @@ export default function App() {
             rankingResults={rankingResults}
             setRankingResults={setRankingResults}
             generalRanking={generalRanking}
+            lastRankingEvent={lastRankingEvent}
+            onDemo={runRankingDemo}
           />
         )}
         {role === 'professor' && page === 'prof-campeonato' && <CreateCampaign />}
@@ -101,7 +201,98 @@ export default function App() {
   );
 }
 
-function HomePage({ setPage, generalRanking }) {
+function LoginPage({ onLogin }) {
+  const [form, setForm] = useState({
+    role: 'student',
+    username: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+
+  function submitLogin(event) {
+    event.preventDefault();
+
+    const authenticated = onLogin(form);
+    if (!authenticated) {
+      setError('Usuario ou senha invalidos para o perfil selecionado.');
+      return;
+    }
+
+    setError('');
+  }
+
+  return (
+    <main className="login-screen">
+      <section className="login-hero">
+        <div className="gear-field" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+
+        <p className="eyebrow">TorqueQuiz Arena</p>
+        <h1>Duelo tecnico de Engenharia Mecanica</h1>
+        <p>
+          Acesse com seu perfil. Alunos entram apenas na arena de jogo; professores entram apenas
+          no painel de acompanhamento e gestao.
+        </p>
+
+        <form className="login-form" onSubmit={submitLogin}>
+          <div className="login-role-tabs" aria-label="Selecionar perfil">
+            <button
+              type="button"
+              className={form.role === 'student' ? 'active' : ''}
+              onClick={() => setForm({ ...form, role: 'student' })}
+            >
+              Aluno
+            </button>
+            <button
+              type="button"
+              className={form.role === 'professor' ? 'active' : ''}
+              onClick={() => setForm({ ...form, role: 'professor' })}
+            >
+              Professor
+            </button>
+          </div>
+
+          <label>
+            Usuario
+            <input
+              autoComplete="username"
+              value={form.username}
+              onChange={(event) => setForm({ ...form, username: event.target.value })}
+              placeholder={form.role === 'student' ? 'aluno' : 'professor'}
+            />
+          </label>
+
+          <label>
+            Senha
+            <input
+              autoComplete="current-password"
+              type="password"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              placeholder="123"
+            />
+          </label>
+
+          {error && <p className="login-error">{error}</p>}
+
+          <button className="login-submit" type="submit">
+            {form.role === 'student' ? 'Entrar como aluno' : 'Entrar como professor'}
+          </button>
+
+          <div className="login-help">
+            <span>Aluno: aluno / 123</span>
+            <span>Professor: professor / 123</span>
+          </div>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function HomePage({ setPage, generalRanking, lastRankingEvent, onDemo }) {
   const stats = [
     { label: 'Regra de ranking', value: '3 / 1 / 0' },
     { label: 'Rodada atual', value: '4 de 8' },
@@ -112,6 +303,11 @@ function HomePage({ setPage, generalRanking }) {
   return (
     <div className="page-stack">
       <section className="hero-panel">
+        <div className="hero-machine" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
         <div>
           <p className="eyebrow">Liga 2026.1</p>
           <h1>X1 tecnico para Engenharia Mecanica</h1>
@@ -124,8 +320,11 @@ function HomePage({ setPage, generalRanking }) {
         <div className="hero-actions">
           <button className="btn-primary" onClick={() => setPage('partida')}>Iniciar X1</button>
           <button className="btn-secondary" onClick={() => setPage('ranking')}>Ver ranking</button>
+          <button className="btn-ghost" onClick={onDemo}>Demo ranking +3</button>
         </div>
       </section>
+
+      {lastRankingEvent && <RankingEventBanner event={lastRankingEvent} />}
 
       <section className="metric-grid">
         {stats.map((stat) => (
@@ -141,13 +340,13 @@ function HomePage({ setPage, generalRanking }) {
           <h2>Classificacao</h2>
           <button className="btn-ghost" onClick={() => setPage('ranking')}>Abrir completo</button>
         </div>
-        <RankingTable rows={generalRanking.slice(0, 5)} />
+        <RankingTable rows={generalRanking.slice(0, 5)} highlightName={lastRankingEvent?.student} />
       </section>
     </div>
   );
 }
 
-function RankingPage({ rankingResults, generalRanking }) {
+function RankingPage({ rankingResults, generalRanking, lastRankingEvent, onDemo }) {
   const [selectedSubject, setSelectedSubject] = useState('geral');
   const selectedSubjectData = weeklySubjects.find((subject) => subject.id === selectedSubject);
   const rows = selectedSubject === 'geral'
@@ -160,6 +359,17 @@ function RankingPage({ rankingResults, generalRanking }) {
         title="Rankings da turma"
         subtitle="Geral soma todas as materias. Cada materia mantem sua propria classificacao."
       />
+
+      <section className="leaderboard-spotlight">
+        <div>
+          <span>Leaderboard ao vivo</span>
+          <strong>{generalRanking[0]?.nome}</strong>
+          <small>{generalRanking[0]?.pontos} pontos no topo da liga</small>
+        </div>
+        <button className="btn-primary" onClick={onDemo}>Rodar teste de ranking</button>
+      </section>
+
+      {lastRankingEvent && <RankingEventBanner event={lastRankingEvent} />}
 
       <section className="schedule-grid">
         {weeklySubjects.map((subject) => (
@@ -185,14 +395,14 @@ function RankingPage({ rankingResults, generalRanking }) {
         </span>
       </section>
 
-      <RankingTable rows={rows} />
+      <RankingTable rows={rows} highlightName={lastRankingEvent?.student} />
     </div>
   );
 }
 
-function RankingTable({ rows }) {
+function RankingTable({ rows, highlightName }) {
   return (
-    <div className="table-card">
+    <div className="table-card leaderboard">
       <div className="table-row table-head">
         <span>Pos.</span>
         <span>Aluno</span>
@@ -202,7 +412,7 @@ function RankingTable({ rows }) {
         <span>Pontos</span>
       </div>
       {rows.map((row) => (
-        <div className="table-row" key={row.nome}>
+        <div className={`table-row ${row.nome === highlightName ? 'updated' : ''}`} key={row.nome}>
           <span>#{row.rank}</span>
           <strong>{row.nome}</strong>
           <span>{row.vitorias}</span>
@@ -212,6 +422,16 @@ function RankingTable({ rows }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function RankingEventBanner({ event }) {
+  return (
+    <section className="ranking-event">
+      <span>Sistema validado</span>
+      <strong>{event.student} recebeu atualizacao no ranking</strong>
+      <small>{event.source} - resultado: {event.result}</small>
+    </section>
   );
 }
 
@@ -258,7 +478,7 @@ function ProfessorDashboard({ setPage }) {
   );
 }
 
-function ProfessorRankingManager({ rankingResults, setRankingResults, generalRanking }) {
+function ProfessorRankingManager({ rankingResults, setRankingResults, generalRanking, lastRankingEvent, onDemo }) {
   const [selectedSubject, setSelectedSubject] = useState(weeklySubjects[0].id);
   const selectedSubjectData = weeklySubjects.find((subject) => subject.id === selectedSubject);
   const subjectRanking = calculateSubjectRanking(rankingResults, selectedSubject);
@@ -294,6 +514,17 @@ function ProfessorRankingManager({ rankingResults, setRankingResults, generalRan
         title="Rankings por materia"
         subtitle="Ajuste manual do professor. O sistema recalcula materia e geral com a regra 3/1/0."
       />
+
+      <section className="leaderboard-spotlight professor-panel">
+        <div>
+          <span>Monitor de desempenho</span>
+          <strong>Ranking recalculado automaticamente</strong>
+          <small>Use o teste para comprovar que uma vitoria altera pontos, posicao e placar.</small>
+        </div>
+        <button className="btn-primary" onClick={onDemo}>Simular vitoria do aluno</button>
+      </section>
+
+      {lastRankingEvent && <RankingEventBanner event={lastRankingEvent} />}
 
       <section className="rank-tabs">
         <select value={selectedSubject} onChange={(event) => setSelectedSubject(event.target.value)}>
@@ -333,13 +564,13 @@ function ProfessorRankingManager({ rankingResults, setRankingResults, generalRan
           <div className="section-header">
             <h2>{selectedSubjectData.name}</h2>
           </div>
-          <RankingTable rows={subjectRanking} />
+          <RankingTable rows={subjectRanking} highlightName={lastRankingEvent?.student} />
         </div>
         <div>
           <div className="section-header">
             <h2>Geral recalculado</h2>
           </div>
-          <RankingTable rows={generalRanking} />
+          <RankingTable rows={generalRanking} highlightName={lastRankingEvent?.student} />
         </div>
       </section>
     </div>
