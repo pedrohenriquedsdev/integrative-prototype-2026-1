@@ -41,6 +41,7 @@ export default function App() {
   const [page, setPage] = useState('inicio');
   const [rankingResults, setRankingResults] = useState(subjectResults);
   const [lastRankingEvent, setLastRankingEvent] = useState(null);
+  const [theme, setTheme] = useState('dark');
   const role = loggedUser?.role || 'student';
 
   const nav = role === 'student'
@@ -119,11 +120,20 @@ export default function App() {
     applyRankingResult('vitoria', 'Teste demonstrativo: vitoria simulada em Termodinamica');
   }
 
+  function toggleTheme() {
+    setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
+  }
+
   if (!loggedUser) {
-    return <LoginPage onLogin={login} />;
+    return (
+      <div className="theme-root" data-theme={theme}>
+        <LoginPage onLogin={login} theme={theme} onToggleTheme={toggleTheme} />
+      </div>
+    );
   }
 
   return (
+    <div className="theme-root" data-theme={theme}>
     <div className="app-shell">
       <aside className="sidebar">
         <button className="brand" onClick={() => setPage(role === 'student' ? 'inicio' : 'prof-dashboard')}>
@@ -139,6 +149,8 @@ export default function App() {
           <strong>{loggedUser.name}</strong>
           <small>{role === 'student' ? 'Area de aluno liberada' : 'Area de professor liberada'}</small>
         </div>
+
+        <ThemeToggle theme={theme} onToggleTheme={toggleTheme} />
 
         <nav className="sidebar-nav">
           {nav.map((item) => (
@@ -198,10 +210,24 @@ export default function App() {
         {role === 'professor' && page === 'prof-campeonato' && <CreateCampaign />}
       </main>
     </div>
+    </div>
   );
 }
 
-function LoginPage({ onLogin }) {
+function ThemeToggle({ theme, onToggleTheme }) {
+  return (
+    <button className="theme-toggle" onClick={onToggleTheme} type="button" aria-label="Alternar tema">
+      <span className="theme-toggle-icon" aria-hidden="true">{theme === 'dark' ? '☾' : '☀'}</span>
+      <span className="theme-toggle-copy">
+        <small>Tema ativo</small>
+        <strong>{theme === 'dark' ? 'Escuro gamer' : 'Claro tecnico'}</strong>
+      </span>
+      <i aria-hidden="true" />
+    </button>
+  );
+}
+
+function LoginPage({ onLogin, theme, onToggleTheme }) {
   const [form, setForm] = useState({
     role: 'student',
     username: '',
@@ -224,6 +250,9 @@ function LoginPage({ onLogin }) {
   return (
     <main className="login-screen">
       <section className="login-hero">
+        <div className="login-theme-control">
+          <ThemeToggle theme={theme} onToggleTheme={onToggleTheme} />
+        </div>
         <div className="gear-field" aria-hidden="true">
           <span />
           <span />
